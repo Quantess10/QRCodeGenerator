@@ -45,10 +45,23 @@ def validate_length(action, value_if_allowed, prior_value, text, validation_type
             return False  # Blokada wstawienia tekstu
     return True
 
-def on_focus_in_qr(event):
-    if text_windowqr.get() == 'Wpisz tekst tutaj...':
-        text_windowqr.delete(0, tk.END)
-        text_windowqr.config()
+def on_focus_in_qr(event, index):
+    if index == 1:
+        if text_windowean.get() == 'Wpisz kod EAN...':
+            text_windowean.delete(0, tk.END)
+            text_windowean.config()
+    if index == 2:        
+        if text_windowseria.get() == 'Wpisz nr serii...':
+            text_windowseria.delete(0, tk.END)
+            text_windowseria.config()
+    if index == 3:           
+        if text_windowidopak.get() == 'Wpisz id opakowania...':
+            text_windowidopak.delete(0, tk.END)
+            text_windowidopak.config()
+    if index == 4:        
+        if text_windowdatawazn.get() == 'Wpisz datę ważności...':
+            text_windowdatawazn.delete(0, tk.END)
+            text_windowdatawazn.config()        
 
 def on_focus_out_bar(event):
     if text_windowbar.get() == '':
@@ -60,30 +73,46 @@ def on_focus_in_bar(event):
         text_windowbar.delete(0, tk.END)
         text_windowbar.config()
 
-def on_focus_out_qr(event):
-    if text_windowqr.get() == '':
-        text_windowqr.insert(0, 'Wpisz tekst tutaj...')
-        text_windowqr.config()            
+def on_focus_out_qr(event, index):
+    if index == 1:
+        if text_windowean.get() == '':
+            text_windowean.insert(0, 'Wpisz kod EAN...')
+            text_windowean.config()
+    if index == 2:        
+        if text_windowseria.get() == '':
+            text_windowseria.insert(0, 'Wpisz nr serii...')
+            text_windowseria.config()
+    if index == 3:        
+        if text_windowidopak.get() == '':
+            text_windowidopak.insert(0, 'Wpisz id opakowania...')
+            text_windowidopak.config()         
+    if index == 4:        
+        if text_windowdatawazn.get() == '':
+            text_windowdatawazn.insert(0, 'Wpisz datę ważności...')
+            text_windowdatawazn.config()                                 
 
 def generate_qr():
     # Pobranie tekstu z pola tekstowego
     global qr_label
-    text = text_windowqr.get()
+    separator = chr(29)
+    text = '(01)' + text_windowean.get() + '(17)' + text_windowdatawazn.get() + '(10)' + text_windowseria.get() + separator + '(21)' + text_windowidopak.get()
     if text == '' or text == 'Wpisz tekst tutaj...':
-        messagebox.showinfo("Error! Error! Dziura w samolocie!", "Nie wygeneruję Ci kodu z niczego! Wpisz coś :)")
+        messagebox.showinfo("Error! Error!", "Nie wygeneruję Ci kodu z niczego! Wpisz coś :)")
         return
     
     if qr_label is not None:
         qr_label.destroy()
     
+    formatted_text = ''.join(text.split(')')).replace('(', '')
+
     # Generowanie kodu QR
     qr = qrcode.QRCode(
-        version=1,
+        version=3,  # wersja 3 to 29x29 px
         error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
+        box_size=8,
         border=2,
     )
-    qr.add_data(text)
+    qr.add_data(formatted_text)
     qr.make(fit=True)
 
     img = qr.make_image(fill_color="black", back_color="white")
@@ -91,10 +120,10 @@ def generate_qr():
     # Konwersja obrazu PIL do formatu Tkinter
     img_tk = ImageTk.PhotoImage(img)
     
-    # Wyświetlenie obrazu kodu QR w aplikacji (możesz potrzebować dodatkowej ramki lub canvasa)
+    # Wyświetlenie obrazu kodu QR
     qr_label = ttk.Label(frame_qrgenerator, image=img_tk)
-    qr_label.image = img_tk  # trzymaj referencję!
-    qr_label.pack(pady=10)  
+    qr_label.image = img_tk
+    qr_label.pack(pady=5)
 
 def generate_barcode():
     global barcode_label
@@ -134,7 +163,7 @@ def generate_barcode():
 
     # Wyświetlenie obrazu kodu kreskowego w aplikacji
     barcode_label = ttk.Label(frame_barcodegenerator, image=img_tk)
-    barcode_label.image = img_tk  # trzymaj referencję!
+    barcode_label.image = img_tk 
     barcode_label.pack(pady=10)    
 
 def init_welcome_frame():
@@ -151,24 +180,49 @@ def init_welcome_frame():
 
     # Utwórz etykietę z obrazem
     label = ttk.Label(welcome_frame, image=photo)
-    label.image = photo  # Trzymaj referencję do obrazu
-    label.pack()  # Możesz dodać pady lub padx, aby ustawić marginesy
+    label.image = photo 
+    label.pack() 
 
 def init_qrgenerator_frame():
     global frame_qrgenerator
-    global text_windowqr
+    global text_windowean
+    global text_windowseria
+    global text_windowidopak
+    global text_windowdatawazn
     frame_qrgenerator = ttk.Frame(root)
     qr_title = ttk.Label(frame_qrgenerator, text="Generator kodów QR")
     qr_title.pack()
 
-    text_windowqr = ttk.Entry(frame_qrgenerator, width=70)
-    text_windowqr.insert(0, 'Wpisz tekst tutaj...')
-    text_windowqr.bind('<FocusIn>', on_focus_in_qr)
-    text_windowqr.bind('<FocusOut>', on_focus_out_qr)
-    text_windowqr.pack(side=tk.TOP, anchor=tk.CENTER, pady=10)
+    #Okno do wpisania ean
+    text_windowean = ttk.Entry(frame_qrgenerator, width=70)
+    text_windowean.insert(0, 'Wpisz kod EAN...')
+    text_windowean.bind('<FocusIn>', lambda event: on_focus_in_qr(event, 1))
+    text_windowean.bind('<FocusOut>', lambda event: on_focus_out_qr(event, 1))
+    text_windowean.pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
+    
+    #Okno do wpsisania serii
+    text_windowseria = ttk.Entry(frame_qrgenerator, width=70)
+    text_windowseria.insert(0, 'Wpisz nr serii...')
+    text_windowseria.bind('<FocusIn>', lambda event: on_focus_in_qr(event, 2))
+    text_windowseria.bind('<FocusOut>', lambda event: on_focus_out_qr(event, 2))
+    text_windowseria.pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
+    
+    #Okno do wpsisania id opakowania
+    text_windowidopak = ttk.Entry(frame_qrgenerator, width=70)
+    text_windowidopak.insert(0, 'Wpisz id opakowania...')
+    text_windowidopak.bind('<FocusIn>', lambda event: on_focus_in_qr(event, 3))
+    text_windowidopak.bind('<FocusOut>', lambda event: on_focus_out_qr(event, 3))
+    text_windowidopak.pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
+    
+    #Okno do wpsisania daty ważności
+    text_windowdatawazn = ttk.Entry(frame_qrgenerator, width=70)
+    text_windowdatawazn.insert(0, 'Wpisz datę ważności w formacie 240726...')
+    text_windowdatawazn.bind('<FocusIn>', lambda event: on_focus_in_qr(event, 4))
+    text_windowdatawazn.bind('<FocusOut>', lambda event: on_focus_out_qr(event, 4))
+    text_windowdatawazn.pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
     
     button_generateqr = ttk.Button(frame_qrgenerator, text="Generuj kod QR", command=generate_qr, width=20)
-    button_generateqr.pack(side=tk.TOP, anchor=tk.CENTER, pady=10)
+    button_generateqr.pack(side=tk.TOP, anchor=tk.CENTER, pady=5)
 
 def init_barcodegenerator_frame():
     global frame_barcodegenerator
